@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nối từ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f7;--ink:#14213d;--mute:#5b6679;--card:#fff;--line:#d5dce8;--green:#2e7d5b;--gold:#f2b705;--red:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1624;--ink:#e8edf6;--mute:#93a0b8;--card:#18223a;--line:#2a3856;--green:#4cc38a;--red:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:32px 20px 56px}
+h1{font-size:2.4rem;font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 24px}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}
+.now{font-size:2.6rem;font-weight:800;letter-spacing:-.01em;margin:4px 0}
+.now b{background:var(--gold);color:#14213d;border-radius:8px;padding:0 10px}
+.need{color:var(--mute);margin:0}
+.need strong{color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:20px}
+input[type=text]{flex:1;min-width:0;font:inherit;font-size:1.1rem;padding:12px 14px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+input[type=text]:focus{outline:3px solid var(--green);outline-offset:1px;border-color:var(--green)}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;background:var(--green);color:#fff}
+button.alt{background:transparent;color:var(--ink);border:2px solid var(--line)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled,input:disabled{opacity:.5;cursor:not-allowed}
+.msg{min-height:1.6em;margin:12px 0 0;font-weight:600}
+.msg.err{color:var(--red)}.msg.ok{color:var(--green)}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:16px;color:var(--mute);font-size:.95rem}
+.tools label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.score{font-weight:600;color:var(--ink)}
+h2{font-size:1.05rem;margin:28px 0 10px}
+.chain{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.chain li{display:flex;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--card);font-weight:600}
+.chain span{padding:5px 11px}
+.chain .link{background:var(--gold);color:#14213d}
+.chain li.me{border-color:var(--green)}
+.chain li.me span:last-child{color:var(--green)}
+.empty{color:var(--mute)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Nối từ</h1>
+  <p class="sub">Từ của bạn phải bắt đầu bằng tiếng cuối của từ trước, và gồm đúng 2 tiếng.</p>
+
+  <section class="stage" aria-live="polite">
+    <p class="need" id="need">Đang chuẩn bị…</p>
+    <div class="now" id="now"></div>
+    <form class="row" id="form" autocomplete="off">
+      <input type="text" id="word" placeholder="Nhập từ 2 tiếng" aria-label="Từ của bạn" autofocus>
+      <button type="submit" id="send">Nối</button>
+    </form>
+    <p class="msg" id="msg"></p>
+    <div class="tools">
+      <span class="score" id="score">Bạn nối được: 0 từ</span>
+      <label><input type="checkbox" id="any"> Chấp nhận mọi từ 2 tiếng</label>
+    </div>
+    <div class="row">
+      <button type="button" class="alt" id="hint">Gợi ý</button>
+      <button type="button" class="alt" id="giveup">Bỏ cuộc</button>
+      <button type="button" class="alt" id="again">Chơi lại</button>
+    </div>
+  </section>
+
+  <h2>Chuỗi từ</h2>
+  <ol class="chain" id="chain"><li class="empty">Chưa có từ nào.</li></ol>
+</main>
+
+<script>
+const RAW = `học sinh,học tập,học hỏi,sinh viên,sinh nhật,sinh hoạt,viên chức,viên gạch,chức năng,chức vụ,năng lượng,năng suất,năng động,lượng giác,giác quan,quan trọng,quan hệ,quan tâm,quan sát,quan chức,trọng tâm,trọng tài,tâm lý,tâm hồn,tâm trạng,tâm sự,lý do,lý thuyết,lý tưởng,do dự,dự án,dự báo,dự định,án mạng,mạng lưới,lưới điện,điện thoại,điện ảnh,điện tử,tử tế,tế bào,bào chữa,chữa bệnh,bệnh viện,bệnh nhân,nhân vật,nhân viên,nhân dân,nhân tài,vật lý,vật chất,chất lượng,chất liệu,hoa hồng,hoa quả,hồng ngọc,ngọc trai,trai tráng,trai gái,tráng lệ,thuộc lòng,lòng tin,tin tưởng,tin tức,tức giận,giận dỗi,giận hờn,dỗi hờn,hờn giận,tưởng tượng,tượng đài,đài hoa,quả tim,tim mạch,mạch máu,máu lạnh,máu mủ,lạnh lùng,lùng sục,sục sôi,sôi nổi,nổi tiếng,tiếng nói,nói chuyện,chuyện trò,trò chơi,chơi bời,chơi đùa,đùa giỡn,giỡn mặt,mặt trời,mặt trăng,trời đất,trời xanh,xanh lá,xanh biếc,đất nước,đất đai,nước ngọt,nước mắt,nước hoa,mắt kính,kính trọng,kính mắt,trăng tròn,trăng sao,tròn xoe,sao chổi,sao băng,băng giá,băng keo,giá cả,giá trị,trị bệnh,trị giá,cả nhà,nhà cửa,nhà trường,trường học,trường thành,thành phố,thành công,thành tích,công việc,công ty,công an,công nhân,việc làm,làm việc,làm bạn,bạn bè,bạn học,bè bạn,phố phường,phường xã,xã hội,hội họa,hội nghị,nghị lực,lực lượng,lực sĩ,sĩ quan,tích cực,cực kỳ,cực khổ,khổ sở,sở thích,sở hữu,thích thú,thú vị,vị trí,trí tuệ,trí nhớ,nhớ nhung,nhung nhớ,quê hương,hương vị,hương thơm,thơm ngon,ngon lành,lành mạnh,mạnh khỏe,mạnh mẽ,khỏe mạnh,khỏe khoắn,mẹ cha,cha mẹ,mẹ hiền,hiền lành,hiền hòa,hòa bình,hòa nhã,bình yên,bình minh,bình thường,thường xuyên,xuyên qua,yên tĩnh,yên lặng,lặng lẽ,lẽ phải,phải trái,trái cây,trái tim,cây cối,cây cỏ,cỏ dại,dại khờ,khờ dại,dại dột,minh bạch,bạch tuyết,tuyết trắng,trắng tinh,tinh thần,tinh tế,tinh khôn,thần kỳ,thần tượng,thần tốc,tốc độ,độ lượng,độ cao,cao thượng,cao ngạo,cao su,su hào,hào hứng,hào quang,quang cảnh,cảnh sát,cảnh đẹp,đẹp trai,sát thủ,thủ đô,thủ tục,tục ngữ,ngữ pháp,ngữ văn,văn học,văn hóa,văn minh,hóa học,hóa đơn,đơn giản,đơn vị,giản dị,dị thường,thường ngày,ngày mai,ngày nay,nay mai,mai sau,sau cùng,cùng nhau,mai mối,mối tình,tình yêu,tình bạn,tình cảm,cảm xúc,cảm ơn,cảm giác,xúc động,xúc phạm,ơn nghĩa,nghĩa vụ,nghĩa trang,vụ án,trang trọng,trang phục,phục vụ,phục hồi,hồi hộp,hồi ức,ức chế,chế độ,chế biến,biến đổi,biến hóa,đổi mới,đổi thay,thay đổi,thay thế,thế giới,thế hệ,hệ thống,hệ quả,thống nhất,nhất định,nhất quán,định mệnh,mệnh lệnh,lệnh cấm,giới hạn,hạn chế,hạn hán,yêu thương,thương yêu,thương nhớ,yêu quý,quý giá,quý báu,báu vật,bản đồ,bản thân,bản quyền,đồ chơi,đồ ăn,ăn uống,uống nước,sách vở,vở kịch,kịch bản,bút chì,chì than,giáo viên,gia đình,đình chỉ,anh hùng,hùng mạnh,anh em,em bé,bé bỏng,bỏ cuộc,cuộc sống,cuộc thi,sống động,sống còn,còn lại,lại gần,gần gũi`;
+const norm = s => s.normalize("NFC").toLowerCase().trim().replace(/\s+/g, " ");
+const WORDS = [...new Set(RAW.split(",").map(norm).filter(w => w.split(" ").length === 2))];
+const byStart = {};
+WORDS.forEach(w => { const [a] = w.split(" "); (byStart[a] = byStart[a] || []).push(w); });
+
+const $ = id => document.getElementById(id);
+let used, chain, last, over, mine;
+
+const free = syl => (byStart[syl] || []).filter(w => !used.has(w));
+const tail = w => w.split(" ")[1];
+
+function render() {
+  const ol = $("chain");
+  ol.innerHTML = "";
+  if (!chain.length) { ol.innerHTML = '<li class="empty">Chưa có từ nào.</li>'; return; }
+  chain.forEach(c => {
+    const li = document.createElement("li");
+    if (c.me) li.className = "me";
+    const [a, b] = c.w.split(" ");
+    const s1 = document.createElement("span"); s1.className = "link"; s1.textContent = a;
+    const s2 = document.createElement("span"); s2.textContent = b;
+    li.append(s1, s2); ol.append(li);
+  });
+  $("score").textContent = "Bạn nối được: " + mine + " từ";
+}
+
+function show(w) {
+  const [a, b] = w.split(" ");
+  $("now").innerHTML = "";
+  $("now").append(a + " ");
+  const bt = document.createElement("b"); bt.textContent = b; $("now").append(bt);
+  $("need").innerHTML = "";
+  $("need").append("Nối tiếp bằng tiếng ");
+  const st = document.createElement("strong"); st.textContent = "“" + b + "”"; $("need").append(st);
+}
+
+function say(text, kind) { const m = $("msg"); m.textContent = text; m.className = "msg " + (kind || ""); }
+
+function setOver(text, kind) {
+  over = true; say(text, kind);
+  $("word").disabled = true; $("send").disabled = true; $("hint").disabled = true; $("giveup").disabled = true;
+  $("again").focus();
+}
+
+function add(w, isMe) { used.add(w); chain.push({ w, me: isMe }); last = tail(w); if (isMe) mine++; show(w); render(); }
+
+function machineTurn() {
+  const opts = free(last);
+  if (!opts.length) return setOver("Máy bí rồi, bạn thắng! Bạn nối được " + mine + " từ.", "ok");
+  const ranked = opts.map(w => ({ w, n: free(tail(w)).filter(x => x !== w).length }))
+                     .sort((x, y) => x.n - y.n);
+  const pick = ranked[Math.floor(Math.random() * Math.min(3, ranked.length))].w;
+  add(pick, false);
+  say("Máy nối: " + pick + ". Đến lượt bạn.");
+  $("word").focus();
+}
+
+function start() {
+  used = new Set(); chain = []; mine = 0; over = false; last = null;
+  $("word").disabled = false; $("send").disabled = false; $("hint").disabled = false; $("giveup").disabled = false;
+  $("word").value = "";
+  const first = WORDS[Math.floor(Math.random() * WORDS.length)];
+  add(first, false); mine = 0; render();
+  say("Máy mở đầu. Đến lượt bạn.");
+  $("word").focus();
+}
+
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  if (over) return;
+  const w = norm($("word").value);
+  const parts = w.split(" ");
+  if (!w) return say("Hãy nhập một từ.", "err");
+  if (parts.length !== 2) return say("Từ phải gồm đúng 2 tiếng, ví dụ: " + chain[chain.length - 1].w, "err");
+  if (parts[0] !== last) return say("Từ phải bắt đầu bằng tiếng “" + last + "”.", "err");
+  if (used.has(w)) return say("Từ này đã dùng rồi, hãy chọn từ khác.", "err");
+  if (!WORDS.includes(w) && !$("any").checked) return say("Từ này chưa có trong từ điển của trò chơi. Bật “Chấp nhận mọi từ 2 tiếng” nếu bạn chắc từ đúng.", "err");
+  $("word").value = "";
+  add(w, true);
+  say("Máy đang nghĩ…");
+  setTimeout(machineTurn, 500);
+});
+
+$("hint").addEventListener("click", () => {
+  const opts = free(last);
+  say(opts.length ? "Gợi ý: " + opts[Math.floor(Math.random() * opts.length)] : "Trong từ điển không còn từ nào để gợi ý.", opts.length ? "" : "err");
+});
+$("giveup").addEventListener("click", () => setOver("Bạn đã bỏ cuộc. Bạn nối được " + mine + " từ.", ""));
+$("again").addEventListener("click", start);
+start();
+</script>
+</body>
+</html>
