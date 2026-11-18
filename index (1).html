@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nối từ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f7;--ink:#14213d;--mute:#5b6679;--card:#fff;--line:#d5dce8;--green:#2e7d5b;--gold:#f2b705;--red:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1624;--ink:#e8edf6;--mute:#93a0b8;--card:#18223a;--line:#2a3856;--green:#4cc38a;--red:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:32px 20px 56px}
+h1{font-size:2.4rem;font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 24px}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}
+.now{font-size:2.6rem;font-weight:800;letter-spacing:-.01em;margin:4px 0}
+.now b{background:var(--gold);color:#14213d;border-radius:8px;padding:0 10px}
+.need{color:var(--mute);margin:0}
+.need strong{color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:20px}
+input[type=text]{flex:1;min-width:0;font:inherit;font-size:1.1rem;padding:12px 14px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+input[type=text]:focus{outline:3px solid var(--green);outline-offset:1px;border-color:var(--green)}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;background:var(--green);color:#fff}
+button.alt{background:transparent;color:var(--ink);border:2px solid var(--line)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled,input:disabled{opacity:.5;cursor:not-allowed}
+.msg{min-height:1.6em;margin:12px 0 0;font-weight:600}
+.msg.err{color:var(--red)}.msg.ok{color:var(--green)}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:16px;color:var(--mute);font-size:.95rem}
+.tools label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.score{font-weight:600;color:var(--ink)}
+h2{font-size:1.05rem;margin:28px 0 10px}
+.chain{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.chain li{display:flex;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--card);font-weight:600}
+.chain span{padding:5px 11px}
+.chain .link{background:var(--gold);color:#14213d}
+.chain li.me{border-color:var(--green)}
+.chain li.me span:last-child{color:var(--green)}
+.empty{color:var(--mute)}
+[hidden]{display:none!important}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+button.on{background:var(--green);color:#fff;border-color:var(--green)}
+#plist{list-style:none;padding:0;margin:12px 0;text-align:left}
+#plist li{padding:6px 0;border-bottom:1px solid var(--line)}
+.small{font-size:.9rem;color:var(--mute);margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>Nối từ</h1>
+  <p class="sub">Từ của bạn phải bắt đầu bằng tiếng cuối của từ trước, và gồm đúng 2 tiếng.</p>
+
+  <div class="tabs">
+    <button type="button" id="tsolo" class="alt on">Chơi với máy</button>
+    <button type="button" id="tonline" class="alt">Chơi online</button>
+  </div>
+<div id="solo">
+  <section class="stage" aria-live="polite">
+    <p class="need" id="need">Đang chuẩn bị…</p>
+    <div class="now" id="now"></div>
+    <form class="row" id="form" autocomplete="off">
+      <input type="text" id="word" placeholder="Nhập từ 2 tiếng" aria-label="Từ của bạn" autofocus>
+      <button type="submit" id="send">Nối</button>
+    </form>
+    <p class="msg" id="msg"></p>
+    <div class="tools">
+      <span class="score" id="score">Bạn nối được: 0 từ</span>
+      <label><input type="checkbox" id="any"> Chấp nhận mọi từ 2 tiếng</label>
+    </div>
+    <div class="row">
+      <button type="button" class="alt" id="hint">Gợi ý</button>
+      <button type="button" class="alt" id="giveup">Bỏ cuộc</button>
+      <button type="button" class="alt" id="again">Chơi lại</button>
+    </div>
+  </section>
+
+  <h2>Chuỗi từ</h2>
+  <ol class="chain" id="chain"><li class="empty">Chưa có từ nào.</li></ol>
+</div>
+
+<div id="online" hidden>
+  <section class="stage" aria-live="polite">
+    <div id="lobby">
+      <p class="need">Chơi cùng bạn bè, mỗi người một thiết bị. Một người tạo phòng, những người còn lại nhập mã phòng.</p>
+      <div class="row"><input type="text" id="oname" placeholder="Tên của bạn" maxlength="16" aria-label="Tên của bạn"></div>
+      <div class="row"><button type="button" id="mk">Tạo phòng</button></div>
+      <div class="row"><input type="text" id="ocode" placeholder="Mã phòng" maxlength="5" aria-label="Mã phòng"><button type="button" id="jn" class="alt">Vào phòng</button></div>
+    </div>
+    <div id="room" hidden>
+      <p class="need">Mã phòng: <strong id="rcode"></strong></p>
+      <div class="row"><input type="text" id="link" readonly aria-label="Link mời bạn bè"><button type="button" id="copy" class="alt">Sao chép link</button></div>
+      <ul id="plist"></ul>
+      <div id="hostbar">
+        <div class="row"><button type="button" id="start">Bắt đầu</button></div>
+        <label class="small"><input type="checkbox" id="oany" checked> Chấp nhận mọi từ 2 tiếng</label>
+      </div>
+      <div class="now" id="onow"></div>
+      <p class="need" id="oturn"></p>
+      <p class="small" id="otime"></p>
+      <form class="row" id="oform" autocomplete="off">
+        <input type="text" id="oword" placeholder="Nhập từ 2 tiếng" aria-label="Từ của bạn">
+        <button type="submit">Nối</button>
+      </form>
+      <div class="row">
+        <button type="button" class="alt" id="oquit">Chịu thua</button>
+        <button type="button" class="alt" id="oleave">Rời phòng</button>
+      </div>
+    </div>
+    <p class="msg" id="omsg"></p>
+  </section>
+  <h2>Chuỗi từ</h2>
+  <ol class="chain" id="ochain"><li class="empty">Chưa có từ nào.</li></ol>
+</div>
+</main>
+
+<script>
+const RAW = `học sinh,học tập,học hỏi,sinh viên,sinh nhật,sinh hoạt,viên chức,viên gạch,chức năng,chức vụ,năng lượng,năng suất,năng động,lượng giác,giác quan,quan trọng,quan hệ,quan tâm,quan sát,quan chức,trọng tâm,trọng tài,tâm lý,tâm hồn,tâm trạng,tâm sự,lý do,lý thuyết,lý tưởng,do dự,dự án,dự báo,dự định,án mạng,mạng lưới,lưới điện,điện thoại,điện ảnh,điện tử,tử tế,tế bào,bào chữa,chữa bệnh,bệnh viện,bệnh nhân,nhân vật,nhân viên,nhân dân,nhân tài,vật lý,vật chất,chất lượng,chất liệu,hoa hồng,hoa quả,hồng ngọc,ngọc trai,trai tráng,trai gái,tráng lệ,thuộc lòng,lòng tin,tin tưởng,tin tức,tức giận,giận dỗi,giận hờn,dỗi hờn,hờn giận,tưởng tượng,tượng đài,đài hoa,quả tim,tim mạch,mạch máu,máu lạnh,máu mủ,lạnh lùng,lùng sục,sục sôi,sôi nổi,nổi tiếng,tiếng nói,nói chuyện,chuyện trò,trò chơi,chơi bời,chơi đùa,đùa giỡn,giỡn mặt,mặt trời,mặt trăng,trời đất,trời xanh,xanh lá,xanh biếc,đất nước,đất đai,nước ngọt,nước mắt,nước hoa,mắt kính,kính trọng,kính mắt,trăng tròn,trăng sao,tròn xoe,sao chổi,sao băng,băng giá,băng keo,giá cả,giá trị,trị bệnh,trị giá,cả nhà,nhà cửa,nhà trường,trường học,trường thành,thành phố,thành công,thành tích,công việc,công ty,công an,công nhân,việc làm,làm việc,làm bạn,bạn bè,bạn học,bè bạn,phố phường,phường xã,xã hội,hội họa,hội nghị,nghị lực,lực lượng,lực sĩ,sĩ quan,tích cực,cực kỳ,cực khổ,khổ sở,sở thích,sở hữu,thích thú,thú vị,vị trí,trí tuệ,trí nhớ,nhớ nhung,nhung nhớ,quê hương,hương vị,hương thơm,thơm ngon,ngon lành,lành mạnh,mạnh khỏe,mạnh mẽ,khỏe mạnh,khỏe khoắn,mẹ cha,cha mẹ,mẹ hiền,hiền lành,hiền hòa,hòa bình,hòa nhã,bình yên,bình minh,bình thường,thường xuyên,xuyên qua,yên tĩnh,yên lặng,lặng lẽ,lẽ phải,phải trái,trái cây,trái tim,cây cối,cây cỏ,cỏ dại,dại khờ,khờ dại,dại dột,minh bạch,bạch tuyết,tuyết trắng,trắng tinh,tinh thần,tinh tế,tinh khôn,thần kỳ,thần tượng,thần tốc,tốc độ,độ lượng,độ cao,cao thượng,cao ngạo,cao su,su hào,hào hứng,hào quang,quang cảnh,cảnh sát,cảnh đẹp,đẹp trai,sát thủ,thủ đô,thủ tục,tục ngữ,ngữ pháp,ngữ văn,văn học,văn hóa,văn minh,hóa học,hóa đơn,đơn giản,đơn vị,giản dị,dị thường,thường ngày,ngày mai,ngày nay,nay mai,mai sau,sau cùng,cùng nhau,mai mối,mối tình,tình yêu,tình bạn,tình cảm,cảm xúc,cảm ơn,cảm giác,xúc động,xúc phạm,ơn nghĩa,nghĩa vụ,nghĩa trang,vụ án,trang trọng,trang phục,phục vụ,phục hồi,hồi hộp,hồi ức,ức chế,chế độ,chế biến,biến đổi,biến hóa,đổi mới,đổi thay,thay đổi,thay thế,thế giới,thế hệ,hệ thống,hệ quả,thống nhất,nhất định,nhất quán,định mệnh,mệnh lệnh,lệnh cấm,giới hạn,hạn chế,hạn hán,yêu thương,thương yêu,thương nhớ,yêu quý,quý giá,quý báu,báu vật,bản đồ,bản thân,bản quyền,đồ chơi,đồ ăn,ăn uống,uống nước,sách vở,vở kịch,kịch bản,bút chì,chì than,giáo viên,gia đình,đình chỉ,anh hùng,hùng mạnh,anh em,em bé,bé bỏng,bỏ cuộc,cuộc sống,cuộc thi,sống động,sống còn,còn lại,lại gần,gần gũi,
+đại học,hiện đại,cổ đại,đại dương,đại gia,học bổng,học bài,học phí,học kỳ,học lực,học vấn,học trò,học đường,
+bài tập,bài học,bài hát,bài thi,bài giảng,bài văn,tập thể,tập luyện,tập trung,tập viết,giảng viên,giảng đường,giảng bài,
+thi cử,thi đua,thi đấu,kỳ thi,kỳ vọng,kỳ nghỉ,nghỉ ngơi,nghỉ hè,kiểm tra,kiểm soát,tra cứu,cứu giúp,cứu hộ,giúp đỡ,đỡ đần,
+điểm số,điểm danh,điểm yếu,điểm mạnh,số học,số phận,số lượng,thầy cô,thầy giáo,cô giáo,giáo dục,giáo trình,giáo án,
+lớp học,lớp trưởng,trưởng thành,trưởng phòng,phòng học,phòng ngủ,ngủ gật,gật đầu,đầu tiên,đầu tư,đầu óc,tiên tiến,tiên phong,
+phong cách,phong cảnh,phong phú,phú quý,cách mạng,cuối cùng,cuối tuần,tuần lễ,lễ hội,lễ phép,phép tính,phép màu,
+màu sắc,màu đỏ,đỏ rực,rực rỡ,sắc đẹp,sắc nét,nét mặt,nét chữ,chữ viết,chữ số,viết văn,viết thư,thư viện,thư giãn,thư từ,
+từ điển,từ vựng,từ bỏ,điển hình,hình ảnh,hình thức,hình tượng,ảnh hưởng,hưởng thụ,thụ động,động vật,động lực,động viên,viên mãn,
+máy tính,máy bay,máy móc,tính toán,tính cách,tính năng,phần mềm,phần cứng,phần thưởng,mềm mại,cứng rắn,rắn rỏi,
+dữ liệu,kết nối,kết quả,kết thúc,kết bạn,nối tiếp,tiếp tục,tiếp theo,tiếp nhận,nhận xét,nhận thức,nhận diện,thức dậy,thức ăn,thức khuya,
+dậy sớm,sớm muộn,muộn màng,lập trình,lập tức,trình bày,trình độ,trình diễn,bày tỏ,tỏ tình,tỏ ra,ra mắt,ra đời,ra vào,vào ra,
+đời sống,đời người,người bạn,người ta,người dùng,dùng thử,dùng bữa,bữa ăn,bữa sáng,sáng tạo,sáng sủa,sáng nay,tạo hình,tạo dáng,dáng vẻ,vẻ đẹp,đẹp mắt,
+con người,con mèo,con chó,con cá,mèo con,chó sói,cá voi,cá heo,cá sấu,chim chóc,chim sẻ,hoa sen,hoa lan,hoa mai,hoa đào,đào tạo,
+mai vàng,vàng ròng,vàng bạc,bạc hà,sông nước,sông núi,núi rừng,núi non,non nước,rừng núi,rừng vàng,biển cả,biển xanh,biển đông,
+đông đúc,đông y,đông đảo,mưa gió,mưa rào,mưa phùn,gió mùa,gió nhẹ,nhẹ nhàng,nắng gió,nắng nóng,nóng bỏng,nóng nảy,nảy sinh,
+sinh sống,sinh thái,thái độ,thái bình,mùa xuân,mùa hè,mùa thu,mùa đông,xuân hạ,xuân sang,sang trọng,sang năm,năm tháng,năm nay,
+tháng ngày,tháng năm,thu hoạch,cỏ cây,cây xanh,cây đa,đa dạng,đa tình,lá cây,lá thư,lá cờ,cờ đỏ,cờ vua,cờ tướng,tướng quân,
+quân đội,quân sự,sự thật,sự nghiệp,sự kiện,thật thà,thật sự,
+bánh mì,bánh chưng,bánh tét,bánh xèo,bánh bao,mì tôm,mì gói,gói quà,quà tặng,quà bánh,tặng quà,cơm trắng,cơm nước,gạo nếp,
+phở bò,bò kho,bún bò,bún chả,bún riêu,canh chua,chua ngọt,ngọt ngào,ngọt lịm,cà phê,phê duyệt,trà đá,trà sữa,sữa chua,sữa tươi,
+tươi cười,tươi tắn,cười nói,cười đùa,đùa vui,vui vẻ,vui chơi,vui mừng,mừng rỡ,mừng tuổi,tuổi trẻ,tuổi thơ,tuổi tác,trẻ em,trẻ trung,
+thơ ấu,thơ ca,ca sĩ,ca khúc,hát hò,hò hẹn,hẹn hò,hẹn gặp,gặp gỡ,gặp mặt,gỡ rối,rối ren,rối loạn,
+đất liền,việt nam,nam bộ,nam nữ,nữ sinh,nữ giới,nam sinh,nam giới,giới trẻ,trẻ con,con cái,cái đẹp,đẹp lòng,lòng dạ,lòng tốt,
+tốt bụng,tốt đẹp,bụng dạ,dạ dày,dày công,dày dặn,công bằng,công lý,công viên,công cộng,cộng đồng,đồng hành,đồng nghiệp,đồng ý,
+đồng tiền,tiền bạc,tiền tài,tiền lương,lương thực,lương tâm,tâm huyết,huyết áp,huyết thống,thống kê,kê khai,khai trương,khai mạc,
+khai thác,thác nước,đường phố,đường đi,đường dài,dài lâu,dài rộng,rộng lớn,rộng rãi,lớn lao,lớn mạnh,lớn khôn,khôn ngoan,ngoan hiền,
+xe cộ,xe đạp,xe hơi,đạp xe,xe lửa,lửa trại,trại hè,hè phố,phố cổ,cổ kính,cổ điển,cổ tích,du lịch,lịch sử,lịch sự,lịch trình,
+sử dụng,sử thi,dụng cụ,cụ thể,cụ già,thể thao,thể hiện,thể chất,thể lực,thao tác,tác phẩm,tác giả,tác dụng,phẩm chất,phẩm giá,
+giả vờ,giả thuyết,thuyết phục,du học,du khách,khách sạn,khách hàng,khách mời,hàng hóa,hàng ngày,hàng xóm,xóm làng,làng quê,làng nghề,
+quê nhà,nhà thơ,nhà văn,nhà báo,báo chí,báo cáo,chí hướng,chí khí,khí hậu,khí thế,hậu quả,hậu duệ,thế kỷ,kỷ niệm,kỷ luật,kỷ lục,
+luật pháp,luật sư,sư phạm,sư tử,phạm vi,phạm lỗi,vi phạm,vi mô,mô hình,mô tả,
+hạnh phúc,phúc lợi,phúc đức,đức tính,đức độ,tính tình,tình thương,buồn bã,buồn vui,buồn tủi,vui buồn,hy vọng,mơ ước,ước mơ,
+mơ mộng,mộng mơ,mộng tưởng,mong muốn,mong đợi,đợi chờ,chờ đợi,chờ mong,ghét bỏ,bỏ qua,bỏ lỡ,bỏ quên,quên lãng,lãng mạn,lãng phí,
+phí phạm,lo lắng,lo âu,lắng nghe,lắng đọng,nghe nhạc,nghe lời,lời nói,lời hứa,lời khuyên,hứa hẹn,khuyên nhủ,khuyên bảo,bảo vệ,
+bảo đảm,bảo hiểm,hiểm nguy,nguy hiểm,hiểm họa,họa sĩ,sĩ diện,diện mạo,mạo hiểm,
+bạn thân,thân thiết,thân thiện,thân thể,thiện chí,thiện cảm,cảm tình,cảm động,cảm nhận,nhận lời,
+gia đình,gia tộc,gia cầm,gia vị,vị ngọt,vị giác,chăm chỉ,chăm sóc,sóc nâu,chăm học,siêng năng,năng nổ,
+nỗ lực,lực học,khó khăn,khăn quàng,quàng khăn,khăn tay,tay chân,tay nghề,chân thành,chân thật,chân lý,thành thật,thành viên,
+thành quả,thành lập,lập nghiệp,nghiệp vụ,nghiệp dư,dư thừa,thừa nhận,nhận định,định hướng,hướng dẫn,hướng nội,hướng ngoại,
+dẫn đường,dẫn đầu,đầu đàn,đàn ông,đàn bà,bà con,bà ngoại,bà nội,ngoại thành,ngoại ngữ,ngoại quốc,quốc gia,quốc tế,
+quốc kỳ,quốc ca,tế nhị,nhị phân,
+sức khỏe,sức mạnh,sức sống,sức lực,sống khỏe,khỏe đẹp,thể dục,dục tốc,tốc hành,hành động,hành trình,hành lý,hành khách,
+lý trí,trí thức,trí khôn,khôn lớn,lớn lên,lên đường,lên lớp,đường lối,lối sống,lối đi,đi học,đi làm,đi chơi,đi bộ,
+bộ môn,bộ phận,bộ đội,bộ trưởng,trưởng bối,phận sự,
+kinh tế,kinh nghiệm,kinh doanh,kinh đô,nghiệm thu,doanh nghiệp,doanh thu,thu nhập,thu nhỏ,thu thập,nhập học,nhập khẩu,
+khẩu vị,khẩu hiệu,hiệu quả,hiệu lực,hiệu trưởng,
+nhạc sĩ,nhạc cụ,nhạc kịch,cụ thể,ca nhạc,nhạc trẻ,âm nhạc,âm thanh,âm lượng,thanh niên,thanh xuân,thanh âm,niên thiếu,
+thiếu niên,thiếu nhi,nhi đồng,đồng ca,đồng đội,đội ngũ,ngũ cốc,cốc nước,nước uống,
+phim ảnh,phim truyện,truyện cổ,truyện tranh,tranh vẽ,tranh luận,tranh đấu,đấu tranh,đấu trí,vẽ tranh,
+du xuân,xuân thu,thu đông,đông xuân,tết nhất,tết đến,đến nơi,đến lúc,lúc này,lúc nào,nào đó,
+khám phá,phá vỡ,phá hoại,vỡ lòng,khám bệnh,bệnh tật,tật nguyền,thuốc men,thuốc lá,thuốc bổ,bổ ích,bổ sung,sung sướng,
+sung túc,túc cầu,cầu thủ,cầu vồng,cầu nguyện,cầu may,may mắn,may rủi,rủi ro,
+bóng đá,bóng rổ,bóng chuyền,bóng tối,bóng đèn,đèn pin,đèn điện,đèn sáng,sáng đèn,đá bóng,đá cầu,
+lửa nóng,nóng lòng,lòng thành,thành thị,thị trường,thị xã,thị giác,xã tắc,
+mặt đất,mặt nước,mặt biển,mặt trận,trận đấu,trận mưa,trận bão,bão tố,bão lũ,lũ lụt,lụt lội,
+thiên nhiên,thiên đường,thiên tai,thiên hạ,hạ cánh,hạ giá,cánh đồng,cánh tay,cánh chim,đồng ruộng,đồng cỏ,ruộng đồng,
+tự nhiên,tự do,tự tin,tự hào,hào hiệp,tự học,tự lập,lập thân,hiệp sĩ,
+anh dũng,dũng cảm,cảm tử,dũng sĩ,tử tế,chiến tranh,chiến đấu,chiến thắng,chiến sĩ,chiến công,thắng lợi,thắng cảnh,lợi ích,lợi nhuận,
+ích kỷ,nhuận bút,hòa thuận,thuận lợi,thuận tiện,tiện lợi,tiện nghi,nghi ngờ,nghi vấn,vấn đề,vấn đáp,đáp án,đáp ứng,ứng dụng,
+ứng xử,xử lý,xử phạt,
+đẹp đẽ,xinh đẹp,xinh xắn,xắn tay,dễ thương,dễ dàng,dễ chịu,chịu khó,chịu đựng,đựng nước,nước sôi,sôi động,
+bình tĩnh,tĩnh lặng,tĩnh tâm,tâm đắc,đắc ý,ý kiến,ý nghĩa,ý chí,ý tưởng,kiến thức,kiến trúc,kiến nghị,trúc xanh,
+nghĩa tình,tình nghĩa,nghĩa cử,cử nhân,cử chỉ,chỉ đạo,chỉ dẫn,chỉ số,chỉ tiêu,tiêu chuẩn,tiêu dùng,tiêu biểu,biểu diễn,
+biểu tượng,biểu hiện,diễn viên,diễn đàn,diễn giả,chuẩn bị,bị động,bị thương,
+hỏi han,hỏi thăm,hỏi đáp,nhật ký,nhật báo,nhật thực,hoạt động,hoạt hình,hoạt bát,gạch ngang,gạch men,suất ăn,suất học,
+tài năng,tài sản,tài liệu,tài chính,tài xế,tài trợ,hồn nhiên,hồn thơ,trạng thái,trạng nguyên,viện trợ,viện trưởng,viện phí,
+dân tộc,dân chủ,dân gian,dân ca,dân cư,liệu trình,liệu pháp,gái quê,lệ phí,lệ thuộc,đai lưng,đai ốc,chổi than,chổi quét,
+keo kiệt,keo dán,cửa sổ,cửa hàng,cửa khẩu,cửa ngõ,cửa biển,an toàn,an ninh,an tâm,an bình,an lành,
+hữu ích,hữu hạn,hữu nghị,hữu tình,tuệ giác,nhã nhặn,nhã ý,qua lại,qua loa,qua đêm,cối xay,
+thượng lưu,thượng đế,hứng thú,hứng khởi,đô thị,đô thành,pháp luật,pháp lý,pháp y,pháp đình,
+hộp thư,hộp đêm,hộp sữa,hộp quà,mới lạ,mới toanh,quán ăn,quán quân,quán xá,quán cóc,
+cấm cửa,cấm kỵ,cấm đường,hán việt,hán tự,quyền lực,quyền lợi,quyền anh,quyền hạn,
+than đá,than thở,than khóc,bỏng ngô,bỏng rát,dương liễu,dương lịch,dương cầm,
+trung thành,trung thực,trung tâm,trung bình,trung thu,trung học,trung hiếu,đua xe,đua thuyền,
+vọng cổ,vọng gác,ngơi nghỉ,soát vé,hộ chiếu,hộ khẩu,đần độn,danh sách,danh tiếng,danh dự,danh lam,danh nhân,
+yếu đuối,yếu tố,yếu ớt,tư duy,tư tưởng,tư vấn,tư liệu,tư thế,
+tiến bộ,tiến lên,tiến sĩ,tiến độ,tiến hành,tiến triển,giãn nở,mãn nguyện,bay bổng,bay nhảy,bay lượn,
+móc túi,móc khóa,thưởng thức,thưởng trà,thúc đẩy,thúc giục,theo dõi,theo đuổi,theo sau,theo kịp,
+xét xử,xét nghiệm,xét duyệt,xét tuyển,khuya khoắt,thử thách,thử nghiệm,thử việc,thử sức,
+voi con,heo rừng,heo quay,sẻ chia,sen hồng,sen trắng,lan tỏa,lan can,lan man,ròng rã,hà tiện,
+đúc kết,đúc tượng,y tế,y học,y tá,y khoa,y phục,đảo ngược,đảo quốc,rào cản,rào chắn,dạng thức,
+vua chúa,vua quan,kiện tụng,kiện hàng,thà rằng,chưng cất,chưng diện,
+bao gồm,bao giờ,bao nhiêu,bao bì,bao dung,bao quát,bao la,tôm hùm,tôm cá,tôm sú,nếp nhà,nếp sống,
+kho báu,kho bãi,kho hàng,chả giò,chả cá,duyệt binh,ấu trĩ,ấu thơ,khúc hát,khúc nhạc,khúc xạ,khúc khích,
+loạn lạc,loạn thị,liền mạch,liền kề,dặn dò,bằng hữu,bằng chứng,bằng lòng,bằng cấp,bằng phẳng,
+thực tế,thực phẩm,thực hiện,thực tập,thực đơn,thực vật,áp lực,áp dụng,áp đảo,lâu đài,lâu dài,lâu năm,
+lao động,lao công,lao lực,hơi thở,hơi nước,hơi ấm,già nua,già dặn,già cả,già yếu,
+mời gọi,mời chào,mời mọc,nghề nghiệp,cáo trạng,cáo phó,cáo lỗi,lục địa,lục bát,lục lọi,
+lỗi lầm,lỗi thời,lỗi lạc,tả tơi,tủi thân,tủi hờn,tủi nhục,lỡ dở,lỡ lời,lỡ làng,
+âu lo,âu yếm,âu sầu,âu châu,vệ sinh,vệ sĩ,vệ tinh,vệ binh,đảm bảo,đảm nhiệm,đảm đang,
+thiết kế,thiết bị,thiết lập,thiết thực,thiết tha,tộc trưởng,tộc người,cầm tay,cầm lái,cầm quyền,cầm cự,
+nâu sồng,nâu đỏ,nổ máy,nổ súng,nổ tung,nội dung,nội bộ,nội thành,nội trợ,nội tâm,nội địa,
+ông bà,ông cha,ông nội,ông ngoại,ông trời,phân tích,phân biệt,phân loại,phân công,phân chia,phân phối,phân bón,
+môn học,môn đồ,môn võ,bối cảnh,bối rối,nhỏ bé,nhỏ nhắn,nhỏ nhẹ,nhỏ xíu,thập niên,thập phân,
+luận văn,luận điểm,luận án,luận bàn,nơi chốn,nơi ở,nơi đây,đó đây,nguyền rủa,men say,men rượu,sướng vui,
+nguyện vọng,nguyện ước,rổ rá,chuyền bóng,tối nay,tối thiểu,tối đa,tối cao,tối tăm,tối qua,
+tắc đường,tắc nghẽn,tố cáo,tố chất,tố tụng,lội ngược,lội suối,nhiên liệu,nhiên hậu,
+tai nạn,tai họa,tai nghe,tai tiếng,ngờ vực,đề tài,đề xuất,đề nghị,đề cương,đề thi,đề cao,đề phòng,
+phạt đền,phạt tiền,đạo đức,đạo diễn,đạo lý,đạo văn,
+người yêu,yêu nước,yêu đời,nước nhà,nhà giàu,giàu có,có thể,thể loại,loại bỏ,bỏ phiếu,phiếu bầu,bầu cử,cử động,
+động đất,nhà ga,ga tàu,tàu hỏa,hỏa tiễn,tiễn đưa,đưa tin,đưa đón,đón tiếp,đón nhận,
+gió biển,biển người,người nhà,nhà hàng,hàng quán,quán nước,nước láng,láng giềng,giềng mối`;
+const norm = s => s.normalize("NFC").toLowerCase().trim().replace(/\s+/g, " ");
+const WORDS = [...new Set(RAW.split(",").map(norm).filter(w => w.split(" ").length === 2))];
+const byStart = {};
+WORDS.forEach(w => { const [a] = w.split(" "); (byStart[a] = byStart[a] || []).push(w); });
+
+const $ = id => document.getElementById(id);
+let used, chain, last, over, mine;
+
+const free = syl => (byStart[syl] || []).filter(w => !used.has(w));
+const tail = w => w.split(" ")[1];
+
+function render() {
+  const ol = $("chain");
+  ol.innerHTML = "";
+  if (!chain.length) { ol.innerHTML = '<li class="empty">Chưa có từ nào.</li>'; return; }
+  chain.forEach(c => {
+    const li = document.createElement("li");
+    if (c.me) li.className = "me";
+    const [a, b] = c.w.split(" ");
+    const s1 = document.createElement("span"); s1.className = "link"; s1.textContent = a;
+    const s2 = document.createElement("span"); s2.textContent = b;
+    li.append(s1, s2); ol.append(li);
+  });
+  $("score").textContent = "Bạn nối được: " + mine + " từ";
+}
+
+function show(w) {
+  const [a, b] = w.split(" ");
+  $("now").innerHTML = "";
+  $("now").append(a + " ");
+  const bt = document.createElement("b"); bt.textContent = b; $("now").append(bt);
+  $("need").innerHTML = "";
+  $("need").append("Nối tiếp bằng tiếng ");
+  const st = document.createElement("strong"); st.textContent = "“" + b + "”"; $("need").append(st);
+}
+
+function say(text, kind) { const m = $("msg"); m.textContent = text; m.className = "msg " + (kind || ""); }
+
+function setOver(text, kind) {
+  over = true; say(text, kind);
+  $("word").disabled = true; $("send").disabled = true; $("hint").disabled = true; $("giveup").disabled = true;
+  $("again").focus();
+}
+
+function add(w, isMe) { used.add(w); chain.push({ w, me: isMe }); last = tail(w); if (isMe) mine++; show(w); render(); }
+
+function machineTurn() {
+  const opts = free(last);
+  if (!opts.length) return setOver("Máy bí rồi, bạn thắng! Bạn nối được " + mine + " từ.", "ok");
+  const ranked = opts.map(w => ({ w, n: free(tail(w)).filter(x => x !== w).length }))
+                     .sort((x, y) => x.n - y.n);
+  const pick = ranked[Math.floor(Math.random() * Math.min(3, ranked.length))].w;
+  add(pick, false);
+  say("Máy nối: " + pick + ". Đến lượt bạn.");
+  $("word").focus();
+}
+
+function start() {
+  used = new Set(); chain = []; mine = 0; over = false; last = null;
+  $("word").disabled = false; $("send").disabled = false; $("hint").disabled = false; $("giveup").disabled = false;
+  $("word").value = "";
+  const first = WORDS[Math.floor(Math.random() * WORDS.length)];
+  add(first, false); mine = 0; render();
+  say("Máy mở đầu. Đến lượt bạn.");
+  $("word").focus();
+}
+
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  if (over) return;
+  const w = norm($("word").value);
+  const parts = w.split(" ");
+  if (!w) return say("Hãy nhập một từ.", "err");
+  if (parts.length !== 2) return say("Từ phải gồm đúng 2 tiếng, ví dụ: " + chain[chain.length - 1].w, "err");
+  if (parts[0] !== last) return say("Từ phải bắt đầu bằng tiếng “" + last + "”.", "err");
+  if (used.has(w)) return say("Từ này đã dùng rồi, hãy chọn từ khác.", "err");
+  if (!WORDS.includes(w) && !$("any").checked) return say("Từ này chưa có trong từ điển của trò chơi. Bật “Chấp nhận mọi từ 2 tiếng” nếu bạn chắc từ đúng.", "err");
+  $("word").value = "";
+  add(w, true);
+  say("Máy đang nghĩ…");
+  setTimeout(machineTurn, 500);
+});
+
+$("hint").addEventListener("click", () => {
+  const opts = free(last);
+  say(opts.length ? "Gợi ý: " + opts[Math.floor(Math.random() * opts.length)] : "Trong từ điển không còn từ nào để gợi ý.", opts.length ? "" : "err");
+});
+$("giveup").addEventListener("click", () => setOver("Bạn đã bỏ cuộc. Bạn nối được " + mine + " từ.", ""));
+$("again").addEventListener("click", start);
+start();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  const CH = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const code5 = () => Array.from({ length: 5 }, () => CH[Math.floor(Math.random() * CH.length)]).join("");
+  let peer = null, isHost = false, myId = "host", myName = "", hostConn = null, G = null, S = null, tleft = 0, inRoom = false;
+  const conns = {};
+  const msg = (t, k) => { const m = $("omsg"); m.textContent = t || ""; m.className = "msg " + (k || ""); };
+
+  function mode(on) {
+    $("solo").hidden = on; $("online").hidden = !on;
+    $("tsolo").classList.toggle("on", !on); $("tonline").classList.toggle("on", on);
+  }
+  $("tsolo").onclick = () => mode(false);
+  $("tonline").onclick = () => mode(true);
+
+  function enterRoom(code) {
+    inRoom = true; $("lobby").hidden = true; $("room").hidden = false;
+    $("rcode").textContent = code;
+    $("link").value = location.origin + location.pathname + "?room=" + code;
+    msg("");
+  }
+
+  function render(s) {
+    S = s;
+    const cur = s.players[s.turn];
+    const mine = s.started && !s.over && cur && cur.id === myId;
+    const me = s.players.find(p => p.id === myId);
+    const ul = $("plist"); ul.innerHTML = "";
+    s.players.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.textContent = p.name + (p.id === myId ? " (bạn)" : "") + (p.alive ? "" : " — đã bị loại") +
+        (s.started && !s.over && p.alive && i === s.turn ? " — đến lượt" : "");
+      ul.append(li);
+    });
+    $("hostbar").hidden = !(isHost && (!s.started || s.over));
+    $("start").textContent = s.over ? "Chơi ván mới" : "Bắt đầu";
+    $("start").disabled = s.players.length < 2;
+    $("oany").checked = s.any;
+    const last = s.chain[s.chain.length - 1];
+    $("onow").textContent = last ? last.w : "";
+    $("oturn").textContent = !s.started ? "Chờ chủ phòng bắt đầu (cần ít nhất 2 người)…"
+      : s.over ? "Hết trò! " + (s.winner || "Không ai") + " thắng."
+      : mine ? "Đến lượt bạn, nối bằng tiếng “" + s.last + "”"
+      : "Đến lượt " + (cur ? cur.name : "") + ", nối bằng tiếng “" + s.last + "”";
+    $("oform").hidden = !mine;
+    $("oquit").hidden = !(s.started && !s.over && me && me.alive);
+    if (mine) $("oword").focus();
+    tleft = s.started && !s.over ? s.secs : 0;
+    $("otime").textContent = tleft ? "Còn " + tleft + " giây" : "";
+    const ol = $("ochain"); ol.innerHTML = "";
+    if (!s.chain.length) ol.innerHTML = '<li class="empty">Chưa có từ nào.</li>';
+    s.chain.forEach(c => {
+      const li = document.createElement("li"); li.title = c.by;
+      const [a, b] = c.w.split(" ");
+      const s1 = document.createElement("span"); s1.className = "link"; s1.textContent = a;
+      const s2 = document.createElement("span"); s2.textContent = b;
+      li.append(s1, s2); ol.append(li);
+    });
+    if (s.note) msg(s.note);
+  }
+  setInterval(() => {
+    if (S && S.started && !S.over && tleft > 0) { tleft--; $("otime").textContent = "Còn " + tleft + " giây"; }
+  }, 1000);
+
+  /* ---------- Chủ phòng: giữ trạng thái và kiểm tra luật ---------- */
+  const pub = () => ({
+    code: G.code, players: G.players.map(p => ({ id: p.id, name: p.name, alive: p.alive })),
+    started: G.started, over: G.over, turn: G.turn, chain: G.chain, last: G.last,
+    any: G.any, winner: G.winner, note: G.note || "", secs: 30
+  });
+  const toAll = o => Object.values(conns).forEach(c => { try { if (c.open) c.send(o); } catch (e) {} });
+  function broadcast() { const s = pub(); toAll({ t: "state", s }); render(s); G.note = ""; }
+  function sendTo(id, o) {
+    if (id === "host") msg(o.m, "err");
+    else if (conns[id]) { try { conns[id].send(o); } catch (e) {} }
+  }
+  function arm() { clearTimeout(G.tm); G.tm = setTimeout(() => kick(G.players[G.turn].id, "hết giờ"), 30000); }
+  function next() {
+    do { G.turn = (G.turn + 1) % G.players.length; } while (!G.players[G.turn].alive);
+    arm(); broadcast();
+  }
+  function kick(id, why) {
+    const p = G.players.find(x => x.id === id);
+    if (!p || !p.alive || !G.started || G.over) return;
+    p.alive = false; G.note = p.name + " bị loại (" + why + ").";
+    const alive = G.players.filter(x => x.alive);
+    if (alive.length <= 1) { G.over = true; G.winner = alive[0] ? alive[0].name : ""; clearTimeout(G.tm); return broadcast(); }
+    if (G.players[G.turn].id === id) next(); else broadcast();
+  }
+  function submit(id, raw) {
+    if (!G.started || G.over) return;
+    const p = G.players[G.turn];
+    if (p.id !== id) return sendTo(id, { t: "err", m: "Chưa đến lượt bạn." });
+    const w = norm(raw || ""), parts = w.split(" ");
+    if (parts.length !== 2) return sendTo(id, { t: "err", m: "Từ phải gồm đúng 2 tiếng." });
+    if (parts[0] !== G.last) return sendTo(id, { t: "err", m: "Từ phải bắt đầu bằng tiếng “" + G.last + "”." });
+    if (G.used.has(w)) return sendTo(id, { t: "err", m: "Từ này đã dùng rồi." });
+    if (!G.any && !WORDS.includes(w)) return sendTo(id, { t: "err", m: "Từ này chưa có trong từ điển của trò chơi." });
+    G.used.add(w); G.chain.push({ w, by: p.name }); G.last = tail(w);
+    G.note = p.name + " nối: " + w + ".";
+    next();
+  }
+  function begin() {
+    if (G.players.length < 2) return msg("Cần ít nhất 2 người chơi.", "err");
+    G.players.forEach(p => p.alive = true);
+    const w = WORDS[Math.floor(Math.random() * WORDS.length)];
+    G.used = new Set([w]); G.chain = [{ w, by: "Máy" }]; G.last = tail(w);
+    G.started = true; G.over = false; G.winner = null; G.turn = 0; G.note = "Từ mở đầu do máy chọn.";
+    arm(); broadcast();
+  }
+  function onHostData(c, d) {
+    if (!d) return;
+    if (d.t === "join") {
+      if (G.started && !G.over) { c.send({ t: "err", m: "Phòng đã bắt đầu chơi, hãy chờ ván sau." }); return setTimeout(() => c.close(), 300); }
+      if (G.players.length >= 8) { c.send({ t: "err", m: "Phòng đã đủ 8 người." }); return setTimeout(() => c.close(), 300); }
+      if (G.players.some(p => p.id === c.peer)) return;
+      G.players.push({ id: c.peer, name: String(d.name || "").slice(0, 16) || "Người chơi", alive: true });
+      conns[c.peer] = c; G.note = ""; broadcast();
+    } else if (d.t === "word") submit(c.peer, d.w);
+    else if (d.t === "quit") kick(c.peer, "chịu thua");
+  }
+  function drop(c) {
+    delete conns[c.peer];
+    if (!G) return;
+    if (G.started && !G.over) kick(c.peer, "mất kết nối");
+    else { G.players = G.players.filter(p => p.id !== c.peer); broadcast(); }
+  }
+  function openRoom(n) {
+    const code = code5();
+    peer = new Peer("noitu-" + code);
+    peer.on("open", () => {
+      G = { code, players: [{ id: "host", name: myName, alive: true }], started: false, over: false, turn: 0, chain: [], used: new Set(), last: "", any: $("oany").checked, winner: null, note: "", tm: null };
+      enterRoom(code); broadcast();
+    });
+    peer.on("connection", c => { c.on("data", d => onHostData(c, d)); c.on("close", () => drop(c)); });
+    peer.on("error", e => {
+      if (e.type === "unavailable-id" && n < 5) { peer.destroy(); openRoom(n + 1); }
+      else msg("Không tạo được phòng (" + e.type + "). Thử lại sau.", "err");
+    });
+  }
+
+  /* ---------- Người vào phòng ---------- */
+  function joinRoom() {
+    const code = $("ocode").value.trim().toUpperCase();
+    if (code.length !== 5) return msg("Mã phòng gồm 5 ký tự.", "err");
+    msg("Đang kết nối…");
+    peer = new Peer();
+    peer.on("open", id => {
+      myId = id;
+      hostConn = peer.connect("noitu-" + code, { reliable: true });
+      const to = setTimeout(() => msg("Không kết nối được. Kiểm tra mã phòng hoặc thử mạng khác.", "err"), 12000);
+      hostConn.on("open", () => { clearTimeout(to); hostConn.send({ t: "join", name: myName }); });
+      hostConn.on("data", d => {
+        if (d.t === "state") { if (!inRoom) enterRoom(code); render(d.s); }
+        else if (d.t === "err") msg(d.m, "err");
+      });
+      hostConn.on("close", () => msg("Đã mất kết nối với chủ phòng.", "err"));
+    });
+    peer.on("error", e => msg(e.type === "peer-unavailable" ? "Không tìm thấy phòng này. Kiểm tra lại mã." : "Lỗi kết nối (" + e.type + ").", "err"));
+  }
+
+  /* ---------- Nút bấm ---------- */
+  const ready = () => {
+    if (typeof Peer === "undefined") { msg("Không tải được thư viện kết nối. Kiểm tra mạng rồi tải lại trang.", "err"); return false; }
+    myName = $("oname").value.trim().slice(0, 16);
+    if (!myName) { msg("Hãy nhập tên của bạn.", "err"); return false; }
+    return true;
+  };
+  $("mk").onclick = () => { if (ready()) { isHost = true; myId = "host"; msg("Đang tạo phòng…"); openRoom(0); } };
+  $("jn").onclick = () => { if (ready()) { isHost = false; joinRoom(); } };
+  $("start").onclick = () => { if (isHost && G && (!G.started || G.over)) begin(); };
+  $("oany").onchange = e => { if (isHost && G) { G.any = e.target.checked; broadcast(); } };
+  $("oform").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = $("oword").value; $("oword").value = "";
+    if (isHost) submit("host", v); else if (hostConn) hostConn.send({ t: "word", w: v });
+  });
+  $("oquit").onclick = () => { if (isHost) kick("host", "chịu thua"); else if (hostConn) hostConn.send({ t: "quit" }); };
+  $("oleave").onclick = () => location.reload();
+  $("copy").onclick = () => {
+    const l = $("link"); l.select();
+    try { navigator.clipboard.writeText(l.value); msg("Đã sao chép link. Gửi cho bạn bè nhé.", "ok"); } catch (e) { msg("Hãy bôi đen link và sao chép thủ công.", ""); }
+  };
+
+  const q = new URLSearchParams(location.search).get("room");
+  if (q) { mode(true); $("ocode").value = q.toUpperCase().slice(0, 5); $("oname").focus(); }
+})();
+</script>
+</body>
+</html>
